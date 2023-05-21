@@ -1,7 +1,22 @@
+import os
+
 from typing import Dict
+from pathlib import Path
+
+ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parents[1].resolve()
+"""Project's root directory"""
+
+DATASET_DIR = ROOT_DIR / "data" / "lsa64_preprocessed_hand_videos"
+"""Preprocessed hand videos directory"""
 
 
-LABELS_MAP: Dict[str, str] = {
+TARGET_TO_ENCODING: Dict[str, int] = {
+    str(i).zfill(3): i-1 for i in range(1, 65)
+}
+"""Maps target number to an integer encoding"""
+
+
+TARGET_TO_WORD: Dict[str, str] = {
     "001": "Opaque",
     "002": "Red",
     "003": "Green",
@@ -67,4 +82,4 @@ LABELS_MAP: Dict[str, str] = {
     "063": "Give",
     "064": "Find",
 }
-"""Maps a label number to the word"""
+"""Map from label number to word"""
