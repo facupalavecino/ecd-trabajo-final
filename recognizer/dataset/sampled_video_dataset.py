@@ -5,13 +5,13 @@ import numpy as np
 
 from typing import Any, Callable, List, Optional
 from torch.utils.data import Dataset
-
+from torchvision import transforms
 
 @dataclass
 class SampledVideoDataset(Dataset):
     video_filenames: List[str]
+    labels: List[int]
     num_frames: int
-    labels: List[str]
     transform: Optional[Callable] = None
 
     def __len__(self):

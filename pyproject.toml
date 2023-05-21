@@ -28,6 +28,7 @@ opencv-python = "^4.7.0.68"
 pyarrow = "^12.0.0"
 torch = "^2.0.1"
 tqdm = "^4.65.0"
+torchvision = "^0.15.2"
 
 
 [build-system]
