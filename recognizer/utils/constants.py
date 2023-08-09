@@ -7,6 +7,8 @@ ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parents[1].resolve()
 """Project's root directory"""
 
 DATASET_DIR = ROOT_DIR / "data" / "lsa64_preprocessed_hand_videos"
+
+ALL_DATASET_DIR = ROOT_DIR / "data" / "all"
 """Preprocessed hand videos directory"""
 
 

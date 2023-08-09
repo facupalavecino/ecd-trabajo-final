@@ -14,6 +14,10 @@ def get_metadata_from_filename(filename: str):
     """
     filename = filename.split(".")[0]
 
-    klass, subject, repetition , _ = filename.split("_")
+    metadata = filename.split("_")
+
+    klass = metadata[0]
+    subject = metadata[1]
+    repetition = metadata[2]
 
     return klass, subject, repetition
