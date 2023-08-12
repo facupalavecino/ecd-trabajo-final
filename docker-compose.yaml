@@ -1,0 +1,88 @@
+version: '3.3'
+
+services:
+
+  minio:
+    image: minio/minio
+    expose:
+      - "9000"
+    ports:
+      - "9000:9000"
+      - "9001:9001" # MinIO Console is available at http://localhost:9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:9000/minio/health/live"
+        ]
+      interval: 1s
+      timeout: 10s
+      retries: 5
+    # Note there is no bucket by default
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./docker/minio/data/:/data
+
+  minio-create-bucket:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      bash -c " mc alias set minio http://minio:9000 ${MINIO_USER} ${MINIO_PASSWORD} && if ! mc ls minio | grep --quiet ecd; then
+          mc mb minio/ecd
+      else
+          echo 'bucket already exists'
+      fi "
+
+  mlflow-db:
+    container_name: ecd_mlflow-db
+    image: postgres:11
+    environment:
+      POSTGRES_USER: "${MLFLOW_POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${MLFLOW_POSTGRES_PASSWORD}"
+      POSTGRES_DB: mlflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+      TZ: UTC
+    restart: always
+    ports:
+      - 5434:5432
+    volumes:
+      - ./docker/mlflow/database:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U ${MLFLOW_POSTGRES_USER} -d mlflow'"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  mlflow-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    expose:
+      - 20000
+    ports:
+      - 0.0.0.0:20000:5001
+    environment:
+      DB_URI: "postgresql+psycopg2://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-db:5432/mlflow"
+      MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
+      MLFLOW_TRACKING_PASSWORD: ${MLFLOW_TRACKING_PASSWORD}
+      AWS_ACCESS_KEY_ID: ${MINIO_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000/
+      TZ: UTC
+    restart: always
+    depends_on:
+      - mlflow-db
+      - minio-create-bucket
+    command: >
+      mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-db:5432/mlflow --default-artifact-root s3://ecd/
