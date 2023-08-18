@@ -135,8 +135,11 @@ data/
 .DS_Store
 
 models/
+!recognizer/models/
 
 .docker/
 docker/
 
 **/mlruns/**
+
+.DS_Store
