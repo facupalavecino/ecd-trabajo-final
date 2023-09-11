@@ -31,6 +31,7 @@ mlflow = "^2.5.0"
 boto3 = "^1.28.25"
 torch = {version = "^2.0.1+cu118", source = "pytorch"}
 torchvision = {version = "^0.15.2+cu118", source = "pytorch"}
+torchsummary = "^1.5.1"
 
 
 [tool.poetry.group.dev.dependencies]
