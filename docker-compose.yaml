@@ -12,6 +12,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    networks:
+      - ecd
     healthcheck:
       test:
         [
@@ -44,12 +46,14 @@ services:
     container_name: ecd_mlflow-db
     image: postgres:11
     environment:
-      POSTGRES_USER: "${MLFLOW_POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${MLFLOW_POSTGRES_PASSWORD}"
+      POSTGRES_USER: ${MLFLOW_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MLFLOW_POSTGRES_PASSWORD}
       POSTGRES_DB: mlflow
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
       TZ: UTC
     restart: always
+    networks:
+      - ecd
     ports:
       - 5434:5432
     volumes:
@@ -69,9 +73,9 @@ services:
       context: .
       dockerfile: Dockerfile.mlflow
     expose:
-      - 20000
+      - 5001
     ports:
-      - 0.0.0.0:20000:5001
+      - 0.0.0.0:5001:5001
     environment:
       DB_URI: "postgresql+psycopg2://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-db:5432/mlflow"
       MLFLOW_TRACKING_USERNAME: ${MLFLOW_TRACKING_USERNAME}
@@ -81,8 +85,20 @@ services:
       MLFLOW_S3_ENDPOINT_URL: http://minio:9000/
       TZ: UTC
     restart: always
+    networks:
+      - ecd
     depends_on:
       - mlflow-db
       - minio-create-bucket
+    volumes:
+      - ./docker/data:/app/data/mlruns:rw
     command: >
-      mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-db:5432/mlflow --default-artifact-root s3://ecd/
+      mlflow server
+      --host 0.0.0.0
+      --port 5001
+      --backend-store-uri postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@mlflow-db:5432/mlflow
+      --default-artifact-root s3://ecd/
+
+networks:
+  ecd:
+    driver: bridge
